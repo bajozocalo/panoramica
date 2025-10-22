@@ -1,7 +1,5 @@
 import { PredictionServiceClient } from '@google-cloud/aiplatform';
 import { helpers } from '@google-cloud/aiplatform';
-import * as admin from 'firebase-admin';
-import sharp from 'sharp';
 import * as functions from 'firebase-functions';
 
 // ... (generateImages, editImage, magicRetouch functions remain the same) ...
@@ -34,7 +32,6 @@ export async function generateWithVirtualModel(
     throw new Error('Failed to generate virtual model.');
   }
   const modelImageBase64 = (modelPredictions[0] as any).structValue.fields.bytesBase64Encoded.stringValue;
-  const modelImageBuffer = Buffer.from(modelImageBase64, 'base64');
   functions.logger.info('Step 1 complete.');
 
   // === Step 2: Generate a Mask for the Placeholder Item ===
@@ -57,7 +54,6 @@ export async function generateWithVirtualModel(
     throw new Error('Failed to generate mask for inpainting.');
   }
   const maskImageBase64 = (maskPredictions[0] as any).structValue.fields.bytesBase64Encoded.stringValue;
-  const maskImageBuffer = Buffer.from(maskImageBase64, 'base64');
   functions.logger.info('Step 2 complete.');
 
   // === Step 3: Inpaint the User's Product onto the Model ===
