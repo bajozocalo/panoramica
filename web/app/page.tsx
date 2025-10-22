@@ -3,6 +3,12 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import ExternalLayout from '@/components/ui/ExternalLayout';
+import type { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'AI Product Photography | Panoramica.digital',
+  description: 'Generate beautiful, high-quality product photos in minutes. Our AI-powered tool makes it easy to create stunning images for your e-commerce store.',
+};
 
 export default function Home() {
   return (
