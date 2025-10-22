@@ -1,0 +1,167 @@
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    // ============================================
+    // HELPER FUNCTIONS
+    // ============================================
+
+    // Check if user is authenticated
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    // Check if user is the owner of a file
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    // Validate image file types
+    function isImage() {
+      return request.resource.contentType.matches('image/.*');
+    }
+
+    // Validate PNG file type
+    function isPNG() {
+      return request.resource.contentType == 'image/png';
+    }
+
+    // Validate file size
+    function isUnderSize(maxSizeMB) {
+      return request.resource.size < maxSizeMB * 1024 * 1024;
+    }
+
+    // Check if metadata is valid
+    function hasValidMetadata() {
+      return request.resource.metadata != null
+        && request.resource.metadata.size() <= 10; // Max 10 metadata fields
+    }
+
+    // ============================================
+    // USER UPLOADS (Product Images)
+    // ============================================
+    match /uploads/{userId}/{fileName} {
+      // Users can read their own uploaded files
+      allow read: if isOwner(userId);
+
+      // Users can upload their own product images
+      // Must be image files, under 10MB
+      allow create: if isOwner(userId)
+        && isImage()
+        && isUnderSize(10)
+        && hasValidMetadata();
+
+      // Users can update/replace their own uploads
+      allow update: if isOwner(userId)
+        && isImage()
+        && isUnderSize(10)
+        && hasValidMetadata();
+
+      // Users can delete their own uploads
+      allow delete: if isOwner(userId);
+    }
+
+    // ============================================
+    // USER LOGOS
+    // ============================================
+    match /logos/{userId}/{fileName} {
+      // Users can read their own logos
+      allow read: if isOwner(userId);
+
+      // Users can upload PNG logos only, under 2MB
+      allow create: if isOwner(userId)
+        && isPNG()
+        && isUnderSize(2)
+        && hasValidMetadata();
+
+      // Users can update/replace their own logos
+      allow update: if isOwner(userId)
+        && isPNG()
+        && isUnderSize(2)
+        && hasValidMetadata();
+
+      // Users can delete their own logos
+      allow delete: if isOwner(userId);
+    }
+
+    // ============================================
+    // USER AVATARS
+    // ============================================
+    match /avatars/{userId}/{fileName} {
+      // Anyone can read avatars (for displaying in UI)
+      // This allows other users to see profile pictures
+      allow read: if true;
+
+      // Users can upload their own avatar images
+      // Must be image files, under 5MB
+      allow create: if isOwner(userId)
+        && isImage()
+        && isUnderSize(5)
+        && hasValidMetadata();
+
+      // Users can update/replace their own avatars
+      allow update: if isOwner(userId)
+        && isImage()
+        && isUnderSize(5)
+        && hasValidMetadata();
+
+      // Users can delete their own avatars
+      allow delete: if isOwner(userId);
+    }
+
+    // ============================================
+    // GENERATED IMAGES (Created by Cloud Functions)
+    // ============================================
+    match /generated/{userId}/{generationId}/{fileName} {
+      // Users can read their own generated images
+      allow read: if isOwner(userId);
+
+      // Only Cloud Functions can create generated images
+      allow create: if false;
+
+      // No one can update generated images (immutable)
+      allow update: if false;
+
+      // Users can delete their own generated images
+      // This happens when they delete a generation
+      allow delete: if isOwner(userId);
+    }
+
+    // ============================================
+    // THUMBNAILS (Auto-generated)
+    // ============================================
+    match /thumbnails/{userId}/{path=**} {
+      // Users can read their own thumbnails
+      allow read: if isOwner(userId);
+
+      // Only Cloud Functions/Extensions can create thumbnails
+      allow create: if false;
+
+      // No one can update thumbnails
+      allow update: if false;
+
+      // Users can delete their own thumbnails
+      allow delete: if isOwner(userId);
+    }
+
+    // ============================================
+    // PUBLIC ASSETS (If needed)
+    // ============================================
+    match /public/{allPaths=**} {
+      // Anyone can read public assets
+      allow read: if true;
+
+      // Only admins can write (via console or service account)
+      allow write: if false;
+    }
+
+    // ============================================
+    // DENY ALL OTHER PATHS
+    // ============================================
+    // Explicitly deny access to any other paths not defined above
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

@@ -1,0 +1,61 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Helper function to check if user is authenticated
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    // Helper function to check if user owns the resource
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    // Users can only read/write their own data
+    match /users/{userId} {
+      allow read: if isOwner(userId);
+      // Users can update their own profile but not credits or plan
+      allow update: if isOwner(userId) &&
+                      !request.resource.data.diff(resource.data).affectedKeys().hasAny(['credits', 'plan', 'stripeCustomerId', 'subscriptionId', 'lifetimeCredits']);
+      // Only functions can create users
+      allow create: if false;
+    }
+
+    // Generations readable by owner only
+    match /generations/{generationId} {
+      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      allow list: if isAuthenticated() && request.auth.uid == resource.data.userId;
+      // Users can create their own generations, but not update/delete them from the client
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      allow update, delete: if false;
+    }
+
+    // Transactions readable by owner only
+    match /transactions/{transactionId} {
+      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      allow list: if isAuthenticated();
+      // Only functions can create transactions
+      allow create, update, delete: if false;
+    }
+
+    // Usage stats readable by owner only
+    match /usage_stats/{statId} {
+      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      // Only functions can write stats
+      allow create, update, delete: if false;
+    }
+
+    // Price config is publicly readable
+    match /price_config/{priceId} {
+      allow read: if true;
+      // Only admins can write (via functions)
+      allow write: if false;
+    }
+
+    // Public gallery (optional)
+    match /gallery/{imageId} {
+      allow read: if true;
+      allow write: if false;
+    }
+  }
+}

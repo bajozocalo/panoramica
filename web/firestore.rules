@@ -1,0 +1,235 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ============================================
+    // HELPER FUNCTIONS
+    // ============================================
+
+    // Check if user is authenticated
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    // Check if user is the owner of a resource
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    // Check if incoming data has all required fields
+    function hasRequiredFields(fields) {
+      return request.resource.data.keys().hasAll(fields);
+    }
+
+    // Check if incoming data only has allowed fields
+    function hasOnlyAllowedFields(fields) {
+      return request.resource.data.keys().hasOnly(fields);
+    }
+
+    // Validate string field length
+    function isValidStringLength(field, minLen, maxLen) {
+      return field is string
+        && field.size() >= minLen
+        && field.size() <= maxLen;
+    }
+
+    // Validate email format
+    function isValidEmail(email) {
+      return email is string
+        && email.matches('^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$');
+    }
+
+    // Check if timestamp is in the past or present
+    function isValidTimestamp(timestamp) {
+      return timestamp is timestamp
+        && timestamp <= request.time;
+    }
+
+    // Validate credit amount is non-negative
+    function isValidCreditAmount(amount) {
+      return amount is int && amount >= 0;
+    }
+
+    // ============================================
+    // USERS COLLECTION
+    // ============================================
+    match /users/{userId} {
+      // Users can read their own document
+      allow read: if isOwner(userId);
+
+      // Users can create their own document during signup
+      // Only allow specific fields to be set
+      allow create: if isOwner(userId)
+        && hasRequiredFields(['email', 'credits', 'createdAt'])
+        && hasOnlyAllowedFields(['email', 'displayName', 'photoURL', 'credits', 'createdAt', 'metadata'])
+        && isValidEmail(request.resource.data.email)
+        && isValidCreditAmount(request.resource.data.credits)
+        && isValidTimestamp(request.resource.data.createdAt)
+        && request.resource.data.credits == 0; // New users start with 0 credits
+
+      // Users can update their own profile
+      // Cannot modify credits directly (only via Cloud Functions)
+      // Cannot modify createdAt
+      allow update: if isOwner(userId)
+        && hasOnlyAllowedFields(['email', 'displayName', 'photoURL', 'credits', 'createdAt', 'metadata'])
+        && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['credits', 'createdAt']))
+        && (
+          !request.resource.data.diff(resource.data).affectedKeys().hasAny(['email'])
+          || isValidEmail(request.resource.data.email)
+        )
+        && (
+          !request.resource.data.diff(resource.data).affectedKeys().hasAny(['displayName'])
+          || isValidStringLength(request.resource.data.displayName, 1, 100)
+        );
+
+      // Users cannot delete their own document (must be done via admin)
+      allow delete: if false;
+    }
+
+    // ============================================
+    // GENERATIONS COLLECTION
+    // ============================================
+    match /generations/{generationId} {
+      // Users can read only their own generations
+      allow read: if isAuthenticated()
+        && resource.data.userId == request.auth.uid;
+
+      // Only Cloud Functions can create generations
+      // This prevents users from creating fake generations
+      allow create: if false;
+
+      // Users can update their own generations
+      // Only allow updating generatedImages array (for favorites) and status
+      // Cannot modify userId, createdAt, scenes, productType
+      allow update: if isAuthenticated()
+        && resource.data.userId == request.auth.uid
+        && hasOnlyAllowedFields(['userId', 'createdAt', 'productType', 'scenes', 'generatedImages', 'styles', 'moods', 'numberOfVariations', 'customPrompt', 'logoPath', 'status'])
+        && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['userId', 'createdAt', 'productType', 'scenes'])
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['generatedImages', 'status']);
+
+      // Users can delete their own generations
+      allow delete: if isAuthenticated()
+        && resource.data.userId == request.auth.uid;
+    }
+
+    // ============================================
+    // TRANSACTIONS COLLECTION
+    // ============================================
+    match /transactions/{transactionId} {
+      // Users can read only their own transactions
+      allow read: if isAuthenticated()
+        && resource.data.userId == request.auth.uid;
+
+      // Only Cloud Functions can create transactions
+      // This ensures all financial transactions are properly logged and validated
+      allow create: if false;
+
+      // Transactions are immutable once created
+      allow update: if false;
+
+      // Users cannot delete transactions (audit trail)
+      // Only admins via Cloud Functions for legal compliance
+      allow delete: if false;
+    }
+
+    // ============================================
+    // USAGE STATS COLLECTION
+    // ============================================
+    match /usage_stats/{statId} {
+      // Users can read only their own usage statistics
+      allow read: if isAuthenticated()
+        && resource.data.userId == request.auth.uid;
+
+      // Only Cloud Functions can create/update usage stats
+      // This prevents users from manipulating their usage data
+      allow create: if false;
+      allow update: if false;
+
+      // Usage stats are permanent (for analytics and billing)
+      allow delete: if false;
+    }
+
+    // ============================================
+    // SETTINGS COLLECTION (READ-ONLY)
+    // ============================================
+    match /settings/{settingId} {
+      // Anyone can read global settings (pricing, features, etc.)
+      allow read: if true;
+
+      // Only admins can write (via console or Cloud Functions)
+      allow write: if false;
+    }
+
+    // ============================================
+    // STRIPE INTEGRATION COLLECTIONS
+    // ============================================
+    // Customers collection (managed by Stripe extension)
+    match /customers/{userId} {
+      // Users can only read their own customer document
+      allow read: if isOwner(userId);
+
+      // Only Stripe extension can write
+      allow write: if false;
+
+      // Checkout sessions subcollection
+      match /checkout_sessions/{sessionId} {
+        // Users can create checkout sessions for themselves
+        allow create: if isOwner(userId);
+
+        // Users can read their own sessions
+        allow read: if isOwner(userId);
+
+        // Only Stripe extension can update/delete
+        allow update, delete: if false;
+      }
+
+      // Payment methods subcollection
+      match /payment_methods/{paymentMethodId} {
+        // Users can read their own payment methods
+        allow read: if isOwner(userId);
+
+        // Only Stripe extension can write
+        allow write: if false;
+      }
+
+      // Subscriptions subcollection (if used)
+      match /subscriptions/{subscriptionId} {
+        // Users can read their own subscriptions
+        allow read: if isOwner(userId);
+
+        // Only Stripe extension can write
+        allow write: if false;
+      }
+    }
+
+    // ============================================
+    // PRODUCTS COLLECTION (READ-ONLY)
+    // ============================================
+    // Products from Stripe
+    match /products/{productId} {
+      // Anyone can read products
+      allow read: if true;
+
+      // Only admins/Stripe can write
+      allow write: if false;
+
+      // Prices subcollection
+      match /prices/{priceId} {
+        // Anyone can read prices
+        allow read: if true;
+
+        // Only admins/Stripe can write
+        allow write: if false;
+      }
+    }
+
+    // ============================================
+    // DENY ALL OTHER COLLECTIONS
+    // ============================================
+    // Explicitly deny access to any other collections not defined above
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

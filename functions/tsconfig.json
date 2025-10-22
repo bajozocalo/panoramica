@@ -1,0 +1,19 @@
+{
+  "compilerOptions": {
+    "module": "commonjs",
+    "noImplicitReturns": true,
+    "noUnusedLocals": true,
+    "outDir": "lib",
+    "sourceMap": true,
+    "strict": true,
+    "target": "ES2020",
+    "esModuleInterop": true,
+    "moduleResolution": "node",
+    "paths": {
+      "stripe-mock-data": ["./src/stripe-mock-data.d.ts"]
+    }
+  },
+  "include": [
+    "src"
+  ]
+}

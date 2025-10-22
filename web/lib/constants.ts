@@ -1,0 +1,65 @@
+export const SCENE_OPTIONS = [
+  { id: 'white-seamless', name: 'White Background', icon: '⚪' },
+  { id: 'modern-kitchen', name: 'Modern Kitchen', icon: '🏠' },
+  { id: 'outdoor-picnic', name: 'Outdoor Scene', icon: '🌳' },
+  { id: 'cozy-bedroom', name: 'Cozy Bedroom', icon: '🛏️' },
+  { id: 'gradient-modern', name: 'Gradient Background', icon: '🎨' },
+  { id: 'in-hand', name: 'In Hand', icon: '✋' },
+  { id: 'flat-lay', name: 'Flat Lay', icon: '📐' },
+  { id: 'office-desk', name: 'Office Desk', icon: '💼' },
+  { id: 'marble-countertop', name: 'Marble Countertop', icon: '💎' },
+  { id: 'gym', name: 'Gym', icon: '🏋️' },
+  { id: 'cafe', name: 'Cafe', icon: '☕' },
+  { id: 'natural-stone', name: 'Natural Stone', icon: '🗿' },
+  { id: 'urban-loft', name: 'Urban Loft', icon: '🏙️' },
+  { id: 'rustic-farmhouse', name: 'Rustic Farmhouse', icon: '🚜' },
+  { id: 'minimalist-studio', name: 'Minimalist Studio', icon: '🏢' },
+  {
+    id: 'cliffside-waterfall',
+    name: 'Cliffside Waterfall',
+    icon: '🏞️',
+  },
+  { id: 'cyberpunk-cityscape', name: 'Cyberpunk Cityscape', icon: '🌃' },
+  { id: 'enchanted-forest', name: 'Enchanted Forest', icon: '🌲' },
+  { id: 'art-deco-speakeasy', name: 'Art Deco Speakeasy', icon: '🍸' },
+  { id: 'tropical-beach-sunset', name: 'Tropical Beach Sunset', icon: '🌅' },
+  { id: 'lunar-surface', name: 'Lunar Surface', icon: '🌕' },
+  { id: 'underwater-coral-reef', name: 'Underwater Coral Reef', icon: '🐠' },
+];
+
+export const PRODUCT_TYPES = [
+  'Skincare Bottle',
+  'Cosmetic Jar',
+  'Luxury Watch',
+  'Sneaker',
+  'Handbag',
+  'Jewelry',
+  'Canned Beverage',
+  'Coffee Bag',
+  'Snack Bar',
+  'Smartphone',
+  'Laptop',
+  'Gaming Controller',
+  'Candle',
+  'Book',
+  'Sunglasses',
+  'Other',
+];
+
+export const STYLE_OPTIONS = [
+  { id: 'photorealistic', name: 'Photorealistic' },
+  { id: 'minimalist', name: 'Minimalist' },
+  { id: 'cinematic', name: 'Cinematic' },
+  { id: 'dramatic', name: 'Dramatic' },
+  { id: 'vibrant', name: 'Vibrant' },
+  { id: 'monochromatic', name: 'Monochromatic' },
+];
+
+export const MOOD_OPTIONS = [
+  { id: 'bright', name: 'Bright' },
+  { id: 'dark', name: 'Dark' },
+  { id: 'energetic', name: 'Energetic' },
+  { id: 'calm', name: 'Calm' },
+  { id: 'luxurious', name: 'Luxurious' },
+  { id: 'rustic', name: 'Rustic' },
+];

@@ -1,0 +1,20 @@
+# Dependencies
+/node_modules
+/functions/node_modules
+/web/node_modules
+
+# Firebase
+.firebase
+firebase-debug.log*
+*.log
+
+# Compiled code
+/functions/lib
+
+# Next.js
+/web/.next
+
+# Environment variables
+.env
+.env*.local
+!/.env.local.example
