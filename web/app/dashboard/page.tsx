@@ -35,7 +35,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
 import OnboardingModal from '@/components/ui/OnboardingModal';
 import { STYLE_OPTIONS, MOOD_OPTIONS } from '@/lib/constants';
-import MagicRetouchModal from '@/components/ui/MagicRetouchModal';
+import MagicRetouchModal from '@/components/ui/MagicRetouchModal.dynamic';
+
+const PAGE_SIZE = 5;
 
 // ... (interfaces remain the same)
 
@@ -61,13 +63,77 @@ export default function Dashboard() {
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [showMagicRetouch, setShowMagicRetouch] = useState(false);
   const [retouchImageUrl, setRetouchImageUrl] = useState('');
+  const [isClient, setIsClient] = useState(false);
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
 
   // State for Virtual Models
   const [modelGender, setModelGender] = useState('');
   const [modelEthnicity, setModelEthnicity] = useState('');
   const [modelSetting, setModelSetting] = useState('');
 
-  // ... (useEffect hooks remain the same)
+  const fetchHistory = useCallback(async (initial = false) => {
+    if (!user) return;
+    setHistoryLoading(true);
+
+    const q = initial
+      ? query(collection(db, 'generations'), where('userId', '==', user.uid), orderBy('createdAt', 'desc'), limit(PAGE_SIZE))
+      : query(collection(db, 'generations'), where('userId', '==', user.uid), orderBy('createdAt', 'desc'), startAfter(lastVisible), limit(PAGE_SIZE));
+
+    const documentSnapshots = await getDocs(q);
+
+    const newHistory: any[] = [];
+    const userFavorites: any[] = [];
+    documentSnapshots.forEach((doc) => {
+      const data = doc.data();
+      const generation = {
+        id: doc.id,
+        createdAt: data.createdAt.toDate(),
+        productType: data.productType,
+        scenes: data.scenes,
+        generatedImages: data.generatedImages,
+      };
+      newHistory.push(generation);
+      generation.generatedImages.forEach((img: any) => {
+          if (img.isFavorite) {
+              userFavorites.push(img);
+          }
+      });
+    });
+
+    setGenerationHistory(prev => initial ? newHistory : [...prev, ...newHistory]);
+    if (initial) setFavorites(userFavorites);
+    else setFavorites(prev => [...prev, ...userFavorites]);
+    
+    setLastVisible(documentSnapshots.docs[documentSnapshots.docs.length - 1]);
+    setHasMore(documentSnapshots.docs.length === PAGE_SIZE);
+    setHistoryLoading(false);
+  }, [user, lastVisible]);
+
+  useEffect(() => {
+    if (userLoaded && !user) {
+      router.push('/auth/login');
+    }
+  }, [user, userLoaded, router]);
+
+  useEffect(() => {
+    const checkOnboarding = async () => {
+        if (user) {
+            const userRef = doc(db, 'users', user.uid);
+            const userDoc = await getDoc(userRef);
+            if (userDoc.exists() && !userDoc.data().metadata?.onboardingCompleted) {
+                setShowOnboarding(true);
+            }
+        }
+    };
+    checkOnboarding();
+  }, [user]);
+
+  useEffect(() => {
+    if(user) fetchHistory(true);
+  }, [user, fetchHistory]);
 
   const handleGenerateWithVirtualModel = async () => {
     if (!uploadedImage || !modelGender || !modelEthnicity || !modelSetting) {
@@ -90,6 +156,34 @@ export default function Dashboard() {
     } finally {
       setGenerating(false);
     }
+  };
+
+  const handleImageUpload = async (file: File) => {
+    if (!user) {
+      toast({ title: 'Authentication Error', description: 'You must be logged in to upload images.', variant: 'destructive' });
+      return;
+    }
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      return toast({ title: 'Invalid File Type', description: 'Please upload an image file.', variant: 'destructive' });
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      return toast({ title: 'File Too Large', description: 'Image must be less than 10MB.', variant: 'destructive' });
+    }
+    try {
+      const filePath = `uploads/${user.uid}/${Date.now()}_${file.name}`;
+      const storageRef = ref(storage, filePath);
+      await uploadBytes(storageRef, file);
+      const downloadUrl = await getDownloadURL(storageRef);
+      setUploadedImage({ url: downloadUrl, path: filePath });
+    } catch (err) {
+      toast({ title: 'Upload Failed', description: 'Failed to upload image.', variant: 'destructive' });
+      console.error(err);
+    }
+  };
+
+  const handleRetouchComplete = () => {
+    fetchHistory(true);
   };
 
   // ... (other handlers remain the same)
@@ -192,7 +286,7 @@ export default function Dashboard() {
           </TabsContent>
         </Tabs>
 
-        {showMagicRetouch && (
+        {isClient && showMagicRetouch && (
           <MagicRetouchModal
             isOpen={showMagicRetouch}
             onClose={() => setShowMagicRetouch(false)}

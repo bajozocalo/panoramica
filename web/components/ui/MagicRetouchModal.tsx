@@ -11,6 +11,7 @@ import { httpsCallable } from 'firebase/functions';
 import { ref, uploadString, getDownloadURL } from 'firebase/storage';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
+import Konva from 'konva';
 
 interface MagicRetouchModalProps {
   isOpen: boolean;
@@ -66,8 +67,12 @@ export default function MagicRetouchModal({ isOpen, onClose, imageUrl, onRetouch
     setIsLoading(true);
 
     try {
+      // Create a dummy div for the container
+      const container = document.createElement('div');
+
       // Create a new stage for the mask, with a black background
       const maskStage = new Konva.Stage({
+        container,
         width: image?.width,
         height: image?.height,
       });

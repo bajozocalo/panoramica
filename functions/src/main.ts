@@ -93,11 +93,13 @@ export const createStripeCheckoutSession = functions.https.onCall(
       });
       return { sessionId: session.id };
     } catch (error) {
-      console.error('Stripe Checkout error:', error);
+      functions.logger.error('Stripe Checkout error:', error);
       throw new functions.https.HttpsError('internal', 'Failed to create Stripe Checkout session');
     }
   }
 );
+
+let globalSettings: admin.firestore.DocumentData | null = null;
 
 // Image generation - lazy load heavy dependencies
 export const generateProductPhotos = functions.runWith({ timeoutSeconds: 540, memory: '2GB' }).https.onCall(async (data, context) => {
@@ -116,10 +118,12 @@ export const generateProductPhotos = functions.runWith({ timeoutSeconds: 540, me
       throw new functions.https.HttpsError('invalid-argument', 'Missing required field: scenes or customPrompt');
     }
     try {
-      const settingsRef = admin.firestore().collection('settings').doc('global');
-      const settingsDoc = await settingsRef.get();
-      const settingsData = settingsDoc.data();
-      if (!settingsData) {
+      if (!globalSettings) {
+        const settingsRef = admin.firestore().collection('settings').doc('global');
+        const settingsDoc = await settingsRef.get();
+        globalSettings = settingsDoc.data();
+      }
+      if (!globalSettings) {
         throw new functions.https.HttpsError('internal', 'App settings not configured.');
       }
       const userRef = admin.firestore().collection('users').doc(userId);
@@ -129,7 +133,7 @@ export const generateProductPhotos = functions.runWith({ timeoutSeconds: 540, me
         throw new functions.https.HttpsError('not-found', 'User not found');
       }
       
-      const costPerImage = customPrompt ? settingsData.generation.costs.background : settingsData.generation.costs.professional;
+      const costPerImage = customPrompt ? globalSettings.generation.costs.background : globalSettings.generation.costs.professional;
       const requiredCredits = (customPrompt ? 1 : scenes.length) * numberOfVariations * costPerImage;
 
       const availableCredits = userData.credits || 0;
@@ -146,13 +150,13 @@ export const generateProductPhotos = functions.runWith({ timeoutSeconds: 540, me
       const bucket = admin.storage().bucket();
       const originalFile = bucket.file(imagePath);
       const [imageBuffer] = await originalFile.download();
-      console.log('Removing background and extracting product...');
+      functions.logger.info('Removing background and extracting product...');
       const extractedProduct = await removeBackground(imageBuffer);
-      console.log('Generating scene/background prompts with Gemini...');
+      functions.logger.info('Generating scene/background prompts with Gemini...');
       const prompts = await generatePrompts(vertexAI, productType, scenes, numberOfVariations, styles, moods, customPrompt);
-      console.log('Compositing product into generated scenes with Imagen...');
+      functions.logger.info('Compositing product into generated scenes with Imagen...');
       const generatedImages = await generateImages(prompts, PROJECT_ID, LOCATION, extractedProduct, logoPath);
-      console.log('Uploading generated images...');
+      functions.logger.info('Uploading generated images...');
       const timestamp = Date.now();
       const uploadPromises = generatedImages.map(async (imgBuffer, index) => {
         const filename = `generated/${userId}/${timestamp}_${index}.png`;
@@ -211,10 +215,10 @@ export const generateProductPhotos = functions.runWith({ timeoutSeconds: 540, me
         updatedAt: admin.firestore.FieldValue.serverTimestamp()
       }, { merge: true });
       await batch.commit();
-      console.log(`Successfully generated ${uploadedImages.length} images`);
+      functions.logger.info(`Successfully generated ${uploadedImages.length} images`);
       return { success: true, images: uploadedImages, creditsUsed: requiredCredits, creditsRemaining: availableCredits - requiredCredits };
     } catch (error) {
-      console.error('Generation error:', error);
+      functions.logger.error('Generation error:', error);
       throw new functions.https.HttpsError('internal', `Generation failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
 });
@@ -281,7 +285,7 @@ export const editProductPhoto = functions.runWith({ timeoutSeconds: 540, memory:
       await batch.commit();
       return { success: true, images: [uploadedImage] };
     } catch (error) {
-      console.error('Edit error:', error);
+      functions.logger.error('Edit error:', error);
       throw new functions.https.HttpsError('internal', `Edit failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
 });
@@ -327,7 +331,7 @@ export const initializeAppSettings = functions.https.onRequest(async (req, res) 
         await settingsRef.set(defaultSettings, { merge: true });
         res.json({ data: { success: true, message: 'App settings initialized successfully.' } });
       } catch (error) {
-        console.error('Error initializing settings:', error);
+        functions.logger.error('Error initializing settings:', error);
         res.status(500).json({ data: { success: false, error: 'Internal server error' } });
       }
     });
@@ -388,143 +392,244 @@ export const generateThumbnail = functions.storage.object().onFinalize(async (ob
 
       const filePath = object.name;
 
-      const contentType = object.contentType;
+            const contentType = object.contentType;
 
-      if (!filePath || !contentType || !contentType.startsWith('image/')) {
+            if (!filePath || !contentType || !contentType.startsWith('image/')) {
 
-        return functions.logger.log('This is not an image.');
+              return functions.logger.info('This is not an image.');
 
-      }
+            }
 
-      if (filePath.startsWith('generated_thumbnails/')) {
+            if (filePath.startsWith('generated_thumbnails/')) {
 
-        return functions.logger.log('Already a thumbnail.');
+              return functions.logger.info('Already a thumbnail.');
 
-      }
+            }
 
-      const fileName = path.basename(filePath);
+            const fileName = path.basename(filePath);
 
-      const tempFilePath = path.join(os.tmpdir(), fileName);
+            const tempFilePath = path.join(os.tmpdir(), fileName);
 
-      const metadata = { contentType: contentType };
+            const metadata = { contentType: contentType };
 
-      await bucket.file(filePath).download({ destination: tempFilePath });
+            await bucket.file(filePath).download({ destination: tempFilePath });
 
-      functions.logger.log('Image downloaded locally to', tempFilePath);
+            functions.logger.info('Image downloaded locally to', tempFilePath);
 
-      const thumbFileName = `thumb_${fileName}`;
+            const thumbFileName = `thumb_${fileName}`;
 
-      const thumbFilePath = path.join(os.tmpdir(), thumbFileName);
+            const thumbFilePath = path.join(os.tmpdir(), thumbFileName);
 
-      await sharp(tempFilePath).resize(200, 200).toFile(thumbFilePath);
+            await sharp(tempFilePath).resize(200, 200).toFile(thumbFilePath);
 
-      const thumbUploadPath = `generated_thumbnails/${thumbFileName}`;
+            const thumbUploadPath = `generated_thumbnails/${thumbFileName}`;
 
-      await bucket.upload(thumbFilePath, { destination: thumbUploadPath, metadata: metadata });
+            await bucket.upload(thumbFilePath, { destination: thumbUploadPath, metadata: metadata });
 
-      return fs.unlinkSync(tempFilePath);
+            return fs.unlinkSync(tempFilePath);
 });
 
 export const generateWithVirtualModel = functions.runWith({ timeoutSeconds: 540, memory: '2GB' }).https.onCall(async (data, context) => {
+
     if (!context.auth) {
+
       throw new functions.https.HttpsError('unauthenticated', 'User must be authenticated');
-    }
-    const userId = context.auth.uid;
-    const { imageUrl, prompt } = data;
-    if (!imageUrl || !prompt) {
-      throw new functions.https.HttpsError('invalid-argument', 'Missing required fields: imageUrl or prompt');
+
     }
 
+    const userId = context.auth.uid;
+
+    const { imageUrl, prompt } = data;
+
+    if (!imageUrl || !prompt) {
+
+      throw new functions.https.HttpsError('invalid-argument', 'Missing required fields: imageUrl or prompt');
+
+    }
+
+
+
     try {
+
       const userRef = admin.firestore().collection('users').doc(userId);
+
       const userDoc = await userRef.get();
+
       const userData = userDoc.data();
+
       if (!userData) {
+
         throw new functions.https.HttpsError('not-found', 'User not found');
+
       }
+
+
 
       // TODO: Add credit check for virtual models
 
+
+
       const { generateWithVirtualModel: generateFn } = await import('./imagenService');
+
       const PROJECT_ID = process.env.GCLOUD_PROJECT || 'panoramica-digital';
+
       const LOCATION = 'us-central1';
+
       const bucket = admin.storage().bucket();
+
+
 
       const [imageBuffer] = await bucket.file(imageUrl.replace(`https://storage.googleapis.com/${bucket.name}/`, '')).download();
 
+
+
       const editedImage = await generateFn(prompt, imageBuffer, PROJECT_ID, LOCATION);
 
+
+
       const timestamp = Date.now();
+
       const filename = `generated/${userId}/${timestamp}_virtual_model.png`;
+
       const file = bucket.file(filename);
+
       await file.save(editedImage, { contentType: 'image/png' });
+
       await file.makePublic();
+
       const uploadedImage = { url: `https://storage.googleapis.com/${bucket.name}/${filename}` };
+
+
 
       // TODO: Add transaction record for credit deduction
 
+
+
       return { success: true, image: uploadedImage };
+
     } catch (error) {
-      console.error('Virtual Model Generation error:', error);
+
+      functions.logger.error('Virtual Model Generation error:', error);
+
       throw new functions.https.HttpsError('internal', `Virtual Model Generation failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+
     }
+
 });
+
+
 
 
 
 export const magicRetouch = functions.runWith({ timeoutSeconds: 540, memory: '2GB' }).https.onCall(async (data, context) => {
 
+
+
     if (!context.auth) {
+
+
 
       throw new functions.https.HttpsError('unauthenticated', 'User must be authenticated');
 
+
+
     }
+
+
 
     const userId = context.auth.uid;
 
+
+
     const { imageUrl, maskUrl, prompt } = data;
+
+
 
     if (!imageUrl || !maskUrl || !prompt) {
 
+
+
       throw new functions.https.HttpsError('invalid-argument', 'Missing required fields: imageUrl, maskUrl, or prompt');
 
+
+
     }
+
+
+
+
 
 
 
     try {
 
+
+
       const userRef = admin.firestore().collection('users').doc(userId);
+
+
 
       const userDoc = await userRef.get();
 
+
+
       const userData = userDoc.data();
+
+
 
       if (!userData) {
 
+
+
         throw new functions.https.HttpsError('not-found', 'User not found');
+
+
 
       }
 
 
 
+
+
+
+
       // TODO: Add credit check for magic retouch
+
+
 
       
 
+
+
       const { magicRetouch: retouchFn } = await import('./imagenService');
+
+
 
       const PROJECT_ID = process.env.GCLOUD_PROJECT || 'panoramica-digital';
 
+
+
       const LOCATION = 'us-central1';
+
+
 
       const bucket = admin.storage().bucket();
 
 
 
+
+
+
+
       const [imageBuffer] = await bucket.file(imageUrl.replace(`https://storage.googleapis.com/${bucket.name}/`, '')).download();
 
+
+
       const [maskBuffer] = await bucket.file(maskUrl.replace(`https://storage.googleapis.com/${bucket.name}/`, '')).download();
+
+
+
+
 
 
 
@@ -532,17 +637,35 @@ export const magicRetouch = functions.runWith({ timeoutSeconds: 540, memory: '2G
 
 
 
+
+
+
+
       const timestamp = Date.now();
+
+
 
       const filename = `generated/${userId}/${timestamp}_retouched.png`;
 
+
+
       const file = bucket.file(filename);
+
+
 
       await file.save(editedImage, { contentType: 'image/png' });
 
+
+
       await file.makePublic();
 
+
+
       const uploadedImage = { url: `https://storage.googleapis.com/${bucket.name}/${filename}` };
+
+
+
+
 
 
 
@@ -550,14 +673,28 @@ export const magicRetouch = functions.runWith({ timeoutSeconds: 540, memory: '2G
 
 
 
+
+
+
+
       return { success: true, image: uploadedImage };
+
+
 
     } catch (error) {
 
-      console.error('Magic Retouch error:', error);
+
+
+      functions.logger.error('Magic Retouch error:', error);
+
+
 
       throw new functions.https.HttpsError('internal', `Magic Retouch failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
 
+
+
     }
+
+
 
 });

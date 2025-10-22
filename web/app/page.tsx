@@ -147,11 +147,11 @@ export default function Home() {
             <div className="flex flex-col items-center justify-center space-y-4 text-center">
               <h3 className="text-2xl font-bold text-gray-700">{t('socialProof.title')}</h3>
               <div className="flex flex-wrap justify-center items-center gap-x-8 gap-y-4">
-                <img className="h-10" src="https://placeholder.com/wp-content/uploads/2018/10/placeholder.com-logo1.png" alt="Placeholder Logo 1" />
-                <img className="h-10" src="https://placeholder.com/wp-content/uploads/2018/10/placeholder.com-logo1.png" alt="Placeholder Logo 2" />
-                <img className="h-10" src="https://placeholder.com/wp-content/uploads/2018/10/placeholder.com-logo1.png" alt="Placeholder Logo 3" />
-                <img className="h-10" src="https://placeholder.com/wp-content/uploads/2018/10/placeholder.com-logo1.png" alt="Placeholder Logo 4" />
-                <img className="h-10" src="https://placeholder.com/wp-content/uploads/2018/10/placeholder.com-logo1.png" alt="Placeholder Logo 5" />
+                <Image width={120} height={40} src="https://placehold.co/120x40/png" alt="Placeholder Logo 1" />
+                <Image width={120} height={40} src="https://placehold.co/120x40/png" alt="Placeholder Logo 2" />
+                <Image width={120} height={40} src="https://placehold.co/120x40/png" alt="Placeholder Logo 3" />
+                <Image width={120} height={40} src="https://placehold.co/120x40/png" alt="Placeholder Logo 4" />
+                <Image width={120} height={40} src="https://placehold.co/120x40/png" alt="Placeholder Logo 5" />
               </div>
             </div>
           </div>

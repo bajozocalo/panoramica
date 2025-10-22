@@ -12,6 +12,7 @@ const pricing = {
     free: {
       name: 'Gratis',
       price: '$0',
+      priceUnit: null,
       features: ['30 créditos gratis', 'Removedor de fondos', 'Funciones básicas de edición'],
       cta: 'Comienza Gratis',
     },
@@ -34,6 +35,7 @@ const pricing = {
     free: {
       name: 'Grátis',
       price: 'R$0',
+      priceUnit: null,
       features: ['30 créditos grátis', 'Removedor de fundo', 'Funções básicas de edição'],
       cta: 'Comece Grátis',
     },
