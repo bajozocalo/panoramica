@@ -121,7 +121,7 @@ export const generateProductPhotos = functions.runWith({ timeoutSeconds: 540, me
       if (!globalSettings) {
         const settingsRef = admin.firestore().collection('settings').doc('global');
         const settingsDoc = await settingsRef.get();
-        globalSettings = settingsDoc.data();
+        globalSettings = settingsDoc.data() ?? null;
       }
       if (!globalSettings) {
         throw new functions.https.HttpsError('internal', 'App settings not configured.');
@@ -430,91 +430,56 @@ export const generateThumbnail = functions.storage.object().onFinalize(async (ob
 });
 
 export const generateWithVirtualModel = functions.runWith({ timeoutSeconds: 540, memory: '2GB' }).https.onCall(async (data, context) => {
-
     if (!context.auth) {
-
       throw new functions.https.HttpsError('unauthenticated', 'User must be authenticated');
-
     }
-
     const userId = context.auth.uid;
-
-    const { imageUrl, prompt } = data;
-
-    if (!imageUrl || !prompt) {
-
-      throw new functions.https.HttpsError('invalid-argument', 'Missing required fields: imageUrl or prompt');
-
+    const { imageUrl, productType, modelDesc, pose, cameraAngle, setting } = data;
+    if (!imageUrl || !productType || !modelDesc || !pose || !cameraAngle || !setting) {
+      throw new functions.https.HttpsError('invalid-argument', 'Missing required fields.');
     }
-
-
 
     try {
-
       const userRef = admin.firestore().collection('users').doc(userId);
-
       const userDoc = await userRef.get();
-
       const userData = userDoc.data();
-
       if (!userData) {
-
         throw new functions.https.HttpsError('not-found', 'User not found');
-
       }
-
-
 
       // TODO: Add credit check for virtual models
 
-
-
+      const { VertexAI } = await import('@google-cloud/vertexai');
+      const { generateVirtualModelPrompt } = await import('./geminiService');
       const { generateWithVirtualModel: generateFn } = await import('./imagenService');
-
+      
       const PROJECT_ID = process.env.GCLOUD_PROJECT || 'panoramica-digital';
-
       const LOCATION = 'us-central1';
-
+      
+      const vertexAI = new VertexAI({ project: PROJECT_ID, location: LOCATION });
       const bucket = admin.storage().bucket();
 
-
+      // Generate the detailed prompt
+      const detailedPrompt = await generateVirtualModelPrompt(vertexAI, modelDesc, pose, cameraAngle, setting, productType);
 
       const [imageBuffer] = await bucket.file(imageUrl.replace(`https://storage.googleapis.com/${bucket.name}/`, '')).download();
 
-
-
-      const editedImage = await generateFn(prompt, imageBuffer, PROJECT_ID, LOCATION);
-
-
+      const finalImage = await generateFn(detailedPrompt, imageBuffer, productType, PROJECT_ID, LOCATION);
 
       const timestamp = Date.now();
-
       const filename = `generated/${userId}/${timestamp}_virtual_model.png`;
-
       const file = bucket.file(filename);
-
-      await file.save(editedImage, { contentType: 'image/png' });
-
+      await file.save(finalImage, { contentType: 'image/png' });
       await file.makePublic();
-
       const uploadedImage = { url: `https://storage.googleapis.com/${bucket.name}/${filename}` };
-
-
 
       // TODO: Add transaction record for credit deduction
 
-
-
       return { success: true, image: uploadedImage };
-
     } catch (error) {
-
       functions.logger.error('Virtual Model Generation error:', error);
-
       throw new functions.https.HttpsError('internal', `Virtual Model Generation failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
-
     }
-
 });
 
 

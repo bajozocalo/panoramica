@@ -72,7 +72,10 @@ export default function Dashboard() {
   // State for Virtual Models
   const [modelGender, setModelGender] = useState('');
   const [modelEthnicity, setModelEthnicity] = useState('');
+  const [modelPose, setModelPose] = useState('');
+  const [modelCamera, setModelCamera] = useState('');
   const [modelSetting, setModelSetting] = useState('');
+  const [productPlacement, setProductPlacement] = useState('');
 
   const fetchHistory = useCallback(async (initial = false) => {
     if (!user) return;
@@ -136,16 +139,19 @@ export default function Dashboard() {
   }, [user, fetchHistory]);
 
   const handleGenerateWithVirtualModel = async () => {
-    if (!uploadedImage || !modelGender || !modelEthnicity || !modelSetting) {
+    if (!uploadedImage || !modelGender || !modelEthnicity || !modelPose || !modelCamera || !modelSetting || !productPlacement) {
       return toast({ title: 'Missing Information', description: 'Please upload an image and select all model options.', variant: 'destructive' });
     }
     setGenerating(true);
     try {
-      const prompt = `A photorealistic image of a ${modelGender} ${modelEthnicity} model in a ${modelSetting} setting, wearing the product.`;
       const generateFn = httpsCallable(functions, 'generateWithVirtualModel');
       const result = await generateFn({
         imageUrl: uploadedImage.path,
-        prompt,
+        productType: productPlacement,
+        modelDesc: { gender: modelGender, ethnicity: modelEthnicity },
+        pose: modelPose,
+        cameraAngle: modelCamera,
+        setting: modelSetting,
       });
       const data = result.data as any;
       setGeneratedImages([data.image]);
@@ -230,7 +236,19 @@ export default function Dashboard() {
                       )}
                     </div>
                     <div className="space-y-2">
-                      <Label className="font-semibold">2. Describe Your Model</Label>
+                      <Label className="font-semibold">2. Product Placement</Label>
+                      <Select onValueChange={setProductPlacement} value={productPlacement}>
+                        <SelectTrigger><SelectValue placeholder="Select where to place the product" /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="t-shirt">On the Torso (T-shirt, etc.)</SelectItem>
+                          <SelectItem value="hat">On the Head (Hat, etc.)</SelectItem>
+                          <SelectItem value="watch">On the Wrist (Watch, etc.)</SelectItem>
+                          <SelectItem value="shoes">On the Feet (Shoes, etc.)</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="font-semibold">3. Describe Your Model</Label>
                       <Select onValueChange={setModelGender} value={modelGender}>
                         <SelectTrigger><SelectValue placeholder="Select Gender" /></SelectTrigger>
                         <SelectContent>
@@ -250,7 +268,26 @@ export default function Dashboard() {
                       </Select>
                     </div>
                     <div className="space-y-2">
-                      <Label className="font-semibold">3. Choose a Setting</Label>
+                      <Label className="font-semibold">4. Choose Pose & Camera</Label>
+                      <Select onValueChange={setModelPose} value={modelPose}>
+                        <SelectTrigger><SelectValue placeholder="Select Pose" /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="standing">Standing</SelectItem>
+                          <SelectItem value="walking">Walking</SelectItem>
+                          <SelectItem value="sitting">Sitting</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <Select onValueChange={setModelCamera} value={modelCamera}>
+                        <SelectTrigger><SelectValue placeholder="Select Camera Angle" /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="full body shot">Full Body Shot</SelectItem>
+                          <SelectItem value="portrait">Portrait</SelectItem>
+                          <SelectItem value="close-up">Close-up</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="font-semibold">5. Choose a Setting</Label>
                       <Select onValueChange={setModelSetting} value={modelSetting}>
                         <SelectTrigger><SelectValue placeholder="Select Setting" /></SelectTrigger>
                         <SelectContent>
@@ -264,7 +301,7 @@ export default function Dashboard() {
                     <div className="pt-6 border-t">
                       <Button
                         onClick={handleGenerateWithVirtualModel}
-                        disabled={generating || !uploadedImage || !modelGender || !modelEthnicity || !modelSetting}
+                        disabled={generating || !uploadedImage || !modelGender || !modelEthnicity || !modelPose || !modelCamera || !modelSetting || !productPlacement}
                         className="w-full"
                         size="lg"
                       >
