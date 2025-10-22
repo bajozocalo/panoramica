@@ -39,5 +39,30 @@
     "title": "Pronto para elevar a fotografia de seus produtos?",
     "subtitle": "Junte-se a centenas de empresas que criam fotos de produtos impressionantes com IA. Comece gratuitamente hoje com 30 créditos, sem necessidade de cartão de crédito.",
     "button": "Inscreva-se Grátis"
+  },
+  "pricing": {
+    "title": "Planos e Preços",
+    "subtitle": "Escolha o plano que melhor se adapta às suas necessidades.",
+    "free": {
+      "name": "Grátis",
+      "price": "R$0",
+      "priceUnit": null,
+      "features": ["30 créditos grátis", "Removedor de fundo", "Funções básicas de edição"],
+      "cta": "Comece Grátis"
+    },
+    "pro": {
+      "name": "Pro",
+      "price": "R$99",
+      "priceUnit": "BRL / mês",
+      "features": ["500 créditos", "Fundos com IA", "Retoque Mágico", "Suporte prioritário"],
+      "cta": "Escolha Pro"
+    },
+    "max": {
+      "name": "Max",
+      "price": "R$249",
+      "priceUnit": "BRL / mês",
+      "features": ["2000 créditos", "Modelos Virtuais com IA", "Todos os recursos Pro", "Suporte premium"],
+      "cta": "Escolha Max"
+    }
   }
 }

@@ -39,5 +39,30 @@
     "title": "¿Listo para elevar la fotografía de tus productos?",
     "subtitle": "Únete a cientos de negocios que crean impresionantes fotos de productos con IA. Comienza gratis hoy con 30 créditos, no se requiere tarjeta de crédito.",
     "button": "Regístrate Gratis"
+  },
+  "pricing": {
+    "title": "Planes y Precios",
+    "subtitle": "Elige el plan que mejor se adapte a tus necesidades.",
+    "free": {
+      "name": "Gratis",
+      "price": "$0",
+      "priceUnit": null,
+      "features": ["30 créditos gratis", "Removedor de fondos", "Funciones básicas de edición"],
+      "cta": "Comienza Gratis"
+    },
+    "pro": {
+      "name": "Pro",
+      "price": "$199",
+      "priceUnit": "MXN / mes",
+      "features": ["500 créditos", "Fondos con IA", "Retoque Mágico", "Soporte prioritario"],
+      "cta": "Elige Pro"
+    },
+    "max": {
+      "name": "Max",
+      "price": "$499",
+      "priceUnit": "MXN / mes",
+      "features": ["2000 créditos", "Modelos Virtuales con IA", "Todas las funciones Pro", "Soporte premium"],
+      "cta": "Elige Max"
+    }
   }
 }
