@@ -21,6 +21,9 @@ export const metadata: Metadata = {
   description: 'Create stunning product photos with AI. Upload your product, choose a scene, and let our AI generate beautiful, high-quality images for your e-commerce store.',
 };
 
+import { Providers } from "@/components/ui/Providers";
+// ... other imports
+
 export default function RootLayout({
   children,
 }: {
@@ -30,11 +33,13 @@ export default function RootLayout({
     <html lang="en">
       <body className={`${inter.variable} ${poppins.variable} font-sans`}>
         <ErrorSuppressor />
-        <AuthProvider>
-          <CreditProvider>
-            {children}
-          </CreditProvider>
-        </AuthProvider>
+        <Providers>
+          <AuthProvider>
+            <CreditProvider>
+              {children}
+            </CreditProvider>
+          </AuthProvider>
+        </Providers>
         <Toaster />
       </body>
     </html>

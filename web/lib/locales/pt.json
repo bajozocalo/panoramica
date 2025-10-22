@@ -1,0 +1,43 @@
+{
+  "hero": {
+    "title": "Crie fotos de produtos que vendem",
+    "subtitle": "Transforme fotos de produtos comuns em imagens de alta qualidade e aparência profissional em minutos. Nossa IA cuida do trabalho pesado para que você possa se concentrar em vender.",
+    "cta": "Experimente Grátis"
+  },
+  "features": {
+    "title": "Como Funciona",
+    "subtitle": "Nosso processo simples de três passos facilita a criação de fotos de produtos profissionais em minutos.",
+    "step1": {
+      "title": "1. Carregue seu Produto",
+      "description": "Carregue uma imagem nítida do seu produto. Nossa IA removerá automaticamente o fundo e o preparará para a integração na cena."
+    },
+    "step2": {
+      "title": "2. Escolha uma Cena",
+      "description": "Selecione de uma biblioteca de cenas projetadas profissionalmente para combinar com o estilo do seu produto e a estética da sua marca."
+    },
+    "step3": {
+      "title": "3. Gere Imagens",
+      "description": "Nossa IA gerará um conjunto de imagens profissionais e de alta qualidade do seu produto na cena escolhida em minutos."
+    }
+  },
+  "testimonials": {
+    "title": "Amado por empreendedores como você",
+    "subtitle": "Descubra como nossa ferramenta está ajudando proprietários de negócios em toda a América Latina a crescer.",
+    "user1": {
+      "quote": "Incrível! Passei de horas editando fotos para apenas minutos. Minhas vendas no Mercado Livre duplicaram.",
+      "name": "Maria G., Vendedora de Joias"
+    },
+    "user2": {
+      "quote": "A ferramenta de fundos com IA é espetacular. Deu um toque profissional ao meu catálogo do WhatsApp Business.",
+      "name": "João P., Dono de Loja de Roupas"
+    }
+  },
+  "socialProof": {
+    "title": "Com a confiança de empreendedores em"
+  },
+  "cta": {
+    "title": "Pronto para elevar a fotografia de seus produtos?",
+    "subtitle": "Junte-se a centenas de empresas que criam fotos de produtos impressionantes com IA. Comece gratuitamente hoje com 30 créditos, sem necessidade de cartão de crédito.",
+    "button": "Inscreva-se Grátis"
+  }
+}

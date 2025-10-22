@@ -1,0 +1,43 @@
+{
+  "hero": {
+    "title": "Crea fotos de productos que venden",
+    "subtitle": "Transforma fotos de productos ordinarias en imágenes de alta calidad y aspecto profesional en cuestión de minutos. Nuestra IA se encarga del trabajo pesado para que tú te concentres en vender.",
+    "cta": "Pruébalo Gratis"
+  },
+  "features": {
+    "title": "Cómo Funciona",
+    "subtitle": "Nuestro simple proceso de tres pasos hace que sea fácil crear fotos de productos profesionales en minutos.",
+    "step1": {
+      "title": "1. Sube tu Producto",
+      "description": "Sube una imagen clara de tu producto. Nuestra IA eliminará automáticamente el fondo y lo preparará para la integración en la escena."
+    },
+    "step2": {
+      "title": "2. Elige una Escena",
+      "description": "Selecciona de una biblioteca de escenas diseñadas profesionalmente para que coincida con el estilo de tu producto y la estética de tu marca."
+    },
+    "step3": {
+      "title": "3. Genera Imágenes",
+      "description": "Nuestra IA generará un conjunto de imágenes profesionales y de alta calidad de tu producto en la escena elegida en cuestión de minutos."
+    }
+  },
+  "testimonials": {
+    "title": "Amado por emprendedores como tú",
+    "subtitle": "Descubre cómo nuestra herramienta está ayudando a dueños de negocios en toda América Latina a crecer.",
+    "user1": {
+      "quote": "¡Increíble! Pasé de tardar horas en editar fotos a solo minutos. Mis ventas en Mercado Libre se duplicaron.",
+      "name": "Maria G., Vendedora de Joyas"
+    },
+    "user2": {
+      "quote": "La herramienta de fondos con IA es espectacular. Le dio un toque profesional a mi catálogo de WhatsApp Business.",
+      "name": "Juan P., Dueño de Tienda de Ropa"
+    }
+  },
+  "socialProof": {
+    "title": "Con la confianza de emprendedores en"
+  },
+  "cta": {
+    "title": "¿Listo para elevar la fotografía de tus productos?",
+    "subtitle": "Únete a cientos de negocios que crean impresionantes fotos de productos con IA. Comienza gratis hoy con 30 créditos, no se requiere tarjeta de crédito.",
+    "button": "Regístrate Gratis"
+  }
+}
