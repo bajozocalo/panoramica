@@ -19,7 +19,7 @@ export default function ExternalLayout({
               height={50}
               className="transition-transform group-hover:scale-105 rounded-full"
             />
-            <span className="text-2xl font-bold bg-gradient-to-r from-blue-900 via-blue-700 to-blue-600 bg-clip-text text-transparent tracking-tight hidden sm:block" style={{ fontFamily: "'Poppins', 'Inter', sans-serif" }}>
+            <span className="text-2xl font-bold bg-gradient-to-r from-blue-900 via-blue-700 to-blue-600 bg-clip-text text-transparent tracking-tight hidden sm:block">
               panoramica.digital
             </span>
           </Link>
@@ -60,7 +60,7 @@ export default function ExternalLayout({
                   height={80}
                   className="rounded-full"
                 />
-                <span className="text-xl font-bold bg-gradient-to-r from-blue-900 via-blue-700 to-blue-600 bg-clip-text text-transparent tracking-tight" style={{ fontFamily: "'Poppins', 'Inter', sans-serif" }}>
+                <span className="text-xl font-bold bg-gradient-to-r from-blue-900 via-blue-700 to-blue-600 bg-clip-text text-transparent tracking-tight">
                   panoramica.digital
                 </span>
               </Link>

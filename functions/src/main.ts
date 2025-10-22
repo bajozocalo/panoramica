@@ -81,12 +81,8 @@ export const createStripeCheckoutSession = functions.https.onCall(
     const { priceId } = data;
     const userId = context.auth.uid;
     try {
-      const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
-      if (!stripeSecretKey) {
-        throw new Error('STRIPE_SECRET_KEY environment variable not set');
-      }
-      const stripe = await import('stripe');
-      const stripeClient = new stripe.Stripe(stripeSecretKey, { apiVersion: '2023-10-16' });
+      const { getStripeClient } = await import('./stripeService');
+      const stripeClient = getStripeClient();
       const session = await stripeClient.checkout.sessions.create({
         payment_method_types: ['card'],
         line_items: [{ price: priceId, quantity: 1 }],
