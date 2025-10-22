@@ -157,7 +157,11 @@ export default function Dashboard() {
   }, [user, fetchHistory]);
 
   const handleImageUpload = async (file: File) => {
-    if (!file || !user) return;
+    if (!user) {
+      toast({ title: 'Authentication Error', description: 'You must be logged in to upload images.', variant: 'destructive' });
+      return;
+    }
+    if (!file) return;
     if (!file.type.startsWith('image/')) {
       return toast({ title: 'Invalid File Type', description: 'Please upload an image file.', variant: 'destructive' });
     }
