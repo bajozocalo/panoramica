@@ -1,3 +1,4 @@
+import Image from 'next/image';
 import Link from 'next/link';
 
 export default function ExternalLayout({
@@ -9,8 +10,13 @@ export default function ExternalLayout({
     <div className="min-h-screen flex flex-col">
       <header className="bg-white border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
-          <Link href="/" className="text-2xl font-bold text-slate-900">
-            Panoramica.digital
+          <Link href="/">
+            <Image
+              src="/panoramicalogo.png"
+              alt="Panoramica.digital Logo"
+              width={200}
+              height={40}
+            />
           </Link>
           <nav className="flex items-center gap-4">
             <Link href="/pricing" className="text-slate-600 hover:text-slate-900">

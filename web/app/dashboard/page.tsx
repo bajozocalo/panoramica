@@ -334,7 +334,12 @@ export default function Dashboard() {
           <div className="flex justify-between items-center py-3">
             <div className="flex items-center">
               <Link href="/dashboard" className="hover:opacity-80 transition-opacity">
-                <h1 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white">Panoramica.digital</h1>
+                <Image
+                  src="/panoramicalogo.png"
+                  alt="Panoramica.digital Logo"
+                  width={180}
+                  height={36}
+                />
               </Link>
             </div>
             <div className="flex items-center gap-2 sm:gap-4">
