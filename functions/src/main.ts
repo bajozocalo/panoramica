@@ -423,7 +423,51 @@ export const generateThumbnail = functions.storage.object().onFinalize(async (ob
       await bucket.upload(thumbFilePath, { destination: thumbUploadPath, metadata: metadata });
 
       return fs.unlinkSync(tempFilePath);
+});
 
+export const generateWithVirtualModel = functions.runWith({ timeoutSeconds: 540, memory: '2GB' }).https.onCall(async (data, context) => {
+    if (!context.auth) {
+      throw new functions.https.HttpsError('unauthenticated', 'User must be authenticated');
+    }
+    const userId = context.auth.uid;
+    const { imageUrl, prompt } = data;
+    if (!imageUrl || !prompt) {
+      throw new functions.https.HttpsError('invalid-argument', 'Missing required fields: imageUrl or prompt');
+    }
+
+    try {
+      const userRef = admin.firestore().collection('users').doc(userId);
+      const userDoc = await userRef.get();
+      const userData = userDoc.data();
+      if (!userData) {
+        throw new functions.https.HttpsError('not-found', 'User not found');
+      }
+
+      // TODO: Add credit check for virtual models
+
+      const { generateWithVirtualModel: generateFn } = await import('./imagenService');
+      const PROJECT_ID = process.env.GCLOUD_PROJECT || 'panoramica-digital';
+      const LOCATION = 'us-central1';
+      const bucket = admin.storage().bucket();
+
+      const [imageBuffer] = await bucket.file(imageUrl.replace(`https://storage.googleapis.com/${bucket.name}/`, '')).download();
+
+      const editedImage = await generateFn(prompt, imageBuffer, PROJECT_ID, LOCATION);
+
+      const timestamp = Date.now();
+      const filename = `generated/${userId}/${timestamp}_virtual_model.png`;
+      const file = bucket.file(filename);
+      await file.save(editedImage, { contentType: 'image/png' });
+      await file.makePublic();
+      const uploadedImage = { url: `https://storage.googleapis.com/${bucket.name}/${filename}` };
+
+      // TODO: Add transaction record for credit deduction
+
+      return { success: true, image: uploadedImage };
+    } catch (error) {
+      console.error('Virtual Model Generation error:', error);
+      throw new functions.https.HttpsError('internal', `Virtual Model Generation failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
 });
 
 

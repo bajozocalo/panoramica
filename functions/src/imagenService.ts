@@ -220,3 +220,49 @@ export async function magicRetouch(
     throw error;
   }
 }
+
+export async function generateWithVirtualModel(
+  prompt: string,
+  productImageBuffer: Buffer,
+  projectId: string,
+  location: string = 'us-central1'
+): Promise<Buffer> {
+  const clientOptions = {
+    apiEndpoint: `${location}-aiplatform.googleapis.com`,
+  };
+
+  const predictionServiceClient = new PredictionServiceClient(clientOptions);
+  const modelName = 'imagegeneration@006';
+  const endpoint = `projects/${projectId}/locations/${location}/publishers/google/models/${modelName}`;
+
+  // Step 1: Generate the model image based on the prompt
+  const modelGenerationRequest = {
+    endpoint,
+    instances: [helpers.toValue({ prompt })],
+    parameters: helpers.toValue({ sampleCount: 1, aspectRatio: "9:16" }),
+  };
+
+  const [modelResponse] = await predictionServiceClient.predict(modelGenerationRequest as any);
+  const modelPredictions = modelResponse.predictions;
+  if (!modelPredictions || modelPredictions.length === 0) {
+    throw new Error('Failed to generate virtual model.');
+  }
+  const modelImageBase64 = (modelPredictions[0] as any).structValue.fields.bytesBase64Encoded.stringValue;
+  const modelImageBuffer = Buffer.from(modelImageBase64, 'base64');
+
+  // Step 2: Composite the product onto the model.
+  // This is a simplified approach. A real implementation would require
+  // a sophisticated masking strategy to place the product correctly.
+  // Here, we'll place the product in the center as a placeholder.
+  const product = sharp(productImageBuffer).resize({ width: 300 }); // Resize product to a reasonable size
+  const productBuffer = await product.toBuffer();
+
+  const finalImage = await sharp(modelImageBuffer)
+    .composite([{
+      input: productBuffer,
+      gravity: 'center',
+    }])
+    .toBuffer();
+
+  return finalImage;
+}
