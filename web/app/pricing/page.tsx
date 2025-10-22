@@ -7,17 +7,26 @@ import ExternalLayout from '@/components/ui/ExternalLayout';
 import { Check } from 'lucide-react';
 import Link from 'next/link';
 
+interface Plan {
+  name: string;
+  price: string;
+  priceUnit: string | null;
+  features: string[];
+  cta: string;
+}
+
 export default function PricingPage() {
   const { t } = useTranslation();
-  const plans = t('pricing.plans', { returnObjects: true }) as any[];
+  const pricing = t('pricing', { returnObjects: true }) as any;
+  const plans = pricing?.plans ? Object.values(pricing.plans) as Plan[] : [];
 
   return (
     <ExternalLayout>
       <main className="flex-1">
         <section className="w-full py-20 md:py-32">
           <div className="w-full max-w-5xl mx-auto px-6 sm:px-8 lg:px-12 text-center">
-            <h1 className="text-4xl sm:text-5xl font-bold mb-4">{t('pricing.title')}</h1>
-            <p className="text-lg text-gray-600">{t('pricing.subtitle')}</p>
+            <h1 className="text-4xl sm:text-5xl font-bold mb-4">{pricing?.title}</h1>
+            <p className="text-lg text-gray-600">{pricing?.subtitle}</p>
           </div>
         </section>
 
