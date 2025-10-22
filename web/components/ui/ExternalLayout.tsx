@@ -14,8 +14,8 @@ export default function ExternalLayout({
             <Image
               src="/panoramicalogo.png"
               alt="Panoramica.digital Logo"
-              width={200}
-              height={40}
+              width={100}
+              height={20}
             />
           </Link>
           <nav className="flex items-center gap-4">

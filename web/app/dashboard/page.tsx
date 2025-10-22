@@ -337,8 +337,8 @@ export default function Dashboard() {
                 <Image
                   src="/panoramicalogo.png"
                   alt="Panoramica.digital Logo"
-                  width={180}
-                  height={36}
+                  width={90}
+                  height={18}
                 />
               </Link>
             </div>
