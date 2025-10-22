@@ -25,6 +25,12 @@ export default function ExternalLayout({
           </Link>
           <nav className="flex items-center gap-6">
             <Link
+              href="/playground"
+              className="text-gray-700 hover:text-blue-600 font-medium transition-colors"
+            >
+              Editor Online
+            </Link>
+            <Link
               href="/pricing"
               className="text-gray-700 hover:text-blue-600 font-medium transition-colors hidden sm:block"
             >

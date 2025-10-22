@@ -166,3 +166,57 @@ export async function editImage(
     throw error;
   }
 }
+
+export async function magicRetouch(
+  prompt: string,
+  projectId: string,
+  location: string = 'us-central1',
+  imageBuffer: Buffer,
+  maskBuffer: Buffer
+): Promise<Buffer> {
+  const clientOptions = {
+    apiEndpoint: `${location}-aiplatform.googleapis.com`,
+  };
+
+  const predictionServiceClient = new PredictionServiceClient(clientOptions);
+
+  const modelName = 'imagegeneration@006';
+  const endpoint = `projects/${projectId}/locations/${location}/publishers/google/models/${modelName}`;
+
+  const imageBase64 = imageBuffer.toString('base64');
+  const maskBase64 = maskBuffer.toString('base64');
+
+  const editRequest = {
+    prompt: prompt,
+    image: { bytesBase64Encoded: imageBase64 },
+    mask: { image: { bytesBase64Encoded: maskBase64 } },
+    editMode: 'inpaint',
+  };
+
+  const instanceValue = helpers.toValue(editRequest);
+
+  const parameters = helpers.toValue({
+    sampleCount: 1,
+  });
+
+  const request = {
+    endpoint: endpoint,
+    instances: [instanceValue],
+    parameters: parameters,
+  };
+
+  try {
+    const [response] = await predictionServiceClient.predict(request as any);
+    const predictions = response.predictions;
+
+    if (predictions && predictions.length > 0) {
+      const imageBytesBase64 = (predictions[0] as any).structValue.fields.bytesBase64Encoded.stringValue;
+      return Buffer.from(imageBytesBase64, 'base64');
+    } else {
+      throw new Error('No predictions received.');
+    }
+  } catch (error) {
+    console.error(`Error with magic retouch for prompt: ${prompt}`, error);
+    throw error;
+  }
+}

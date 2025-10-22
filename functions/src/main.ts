@@ -381,25 +381,139 @@ export const deleteGeneration = functions.https.onCall(async (data, context) => 
 });
 
 // Thumbnail generation
+
 export const generateThumbnail = functions.storage.object().onFinalize(async (object) => {
+
       const bucket = admin.storage().bucket(object.bucket);
+
       const filePath = object.name;
+
       const contentType = object.contentType;
+
       if (!filePath || !contentType || !contentType.startsWith('image/')) {
+
         return functions.logger.log('This is not an image.');
+
       }
+
       if (filePath.startsWith('generated_thumbnails/')) {
+
         return functions.logger.log('Already a thumbnail.');
+
       }
+
       const fileName = path.basename(filePath);
+
       const tempFilePath = path.join(os.tmpdir(), fileName);
+
       const metadata = { contentType: contentType };
+
       await bucket.file(filePath).download({ destination: tempFilePath });
+
       functions.logger.log('Image downloaded locally to', tempFilePath);
+
       const thumbFileName = `thumb_${fileName}`;
+
       const thumbFilePath = path.join(os.tmpdir(), thumbFileName);
+
       await sharp(tempFilePath).resize(200, 200).toFile(thumbFilePath);
+
       const thumbUploadPath = `generated_thumbnails/${thumbFileName}`;
+
       await bucket.upload(thumbFilePath, { destination: thumbUploadPath, metadata: metadata });
+
       return fs.unlinkSync(tempFilePath);
+
+});
+
+
+
+export const magicRetouch = functions.runWith({ timeoutSeconds: 540, memory: '2GB' }).https.onCall(async (data, context) => {
+
+    if (!context.auth) {
+
+      throw new functions.https.HttpsError('unauthenticated', 'User must be authenticated');
+
+    }
+
+    const userId = context.auth.uid;
+
+    const { imageUrl, maskUrl, prompt } = data;
+
+    if (!imageUrl || !maskUrl || !prompt) {
+
+      throw new functions.https.HttpsError('invalid-argument', 'Missing required fields: imageUrl, maskUrl, or prompt');
+
+    }
+
+
+
+    try {
+
+      const userRef = admin.firestore().collection('users').doc(userId);
+
+      const userDoc = await userRef.get();
+
+      const userData = userDoc.data();
+
+      if (!userData) {
+
+        throw new functions.https.HttpsError('not-found', 'User not found');
+
+      }
+
+
+
+      // TODO: Add credit check for magic retouch
+
+      
+
+      const { magicRetouch: retouchFn } = await import('./imagenService');
+
+      const PROJECT_ID = process.env.GCLOUD_PROJECT || 'panoramica-digital';
+
+      const LOCATION = 'us-central1';
+
+      const bucket = admin.storage().bucket();
+
+
+
+      const [imageBuffer] = await bucket.file(imageUrl.replace(`https://storage.googleapis.com/${bucket.name}/`, '')).download();
+
+      const [maskBuffer] = await bucket.file(maskUrl.replace(`https://storage.googleapis.com/${bucket.name}/`, '')).download();
+
+
+
+      const editedImage = await retouchFn(prompt, PROJECT_ID, LOCATION, imageBuffer, maskBuffer);
+
+
+
+      const timestamp = Date.now();
+
+      const filename = `generated/${userId}/${timestamp}_retouched.png`;
+
+      const file = bucket.file(filename);
+
+      await file.save(editedImage, { contentType: 'image/png' });
+
+      await file.makePublic();
+
+      const uploadedImage = { url: `https://storage.googleapis.com/${bucket.name}/${filename}` };
+
+
+
+      // TODO: Add transaction record for credit deduction
+
+
+
+      return { success: true, image: uploadedImage };
+
+    } catch (error) {
+
+      console.error('Magic Retouch error:', error);
+
+      throw new functions.https.HttpsError('internal', `Magic Retouch failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+
+    }
+
 });

@@ -35,6 +35,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
 import OnboardingModal from '@/components/ui/OnboardingModal';
 import { STYLE_OPTIONS, MOOD_OPTIONS } from '@/lib/constants';
+import MagicRetouchModal from '@/components/ui/MagicRetouchModal';
 
 interface GeneratedImage {
   url: string;
@@ -82,8 +83,8 @@ export default function Dashboard() {
   const [lastVisible, setLastVisible] = useState<QueryDocumentSnapshot | null>(null);
   const [hasMore, setHasMore] = useState(true);
   const [showOnboarding, setShowOnboarding] = useState(false);
-  const [editingImage, setEditingImage] = useState<GeneratedImage | null>(null);
-  const [editPrompt, setEditPrompt] = useState('');
+  const [showMagicRetouch, setShowMagicRetouch] = useState(false);
+  const [retouchImageUrl, setRetouchImageUrl] = useState('');
 
   useEffect(() => {
     if (userLoaded && !user) {
@@ -306,24 +307,8 @@ export default function Dashboard() {
     }
   };
 
-  const handleEdit = async () => {
-    if (!editingImage || !editPrompt) return;
-    setGenerating(true);
-    setEditingImage(null);
-    try {
-      const editFn = httpsCallable(functions, 'editProductPhoto');
-      await editFn({
-        imageUrl: editingImage.url,
-        prompt: editPrompt,
-      });
-      toast({ title: 'Edit Complete!', description: 'Your image has been edited successfully.' });
-      fetchHistory(true); // Refresh history
-    } catch (err: any) {
-      toast({ title: 'Edit Failed', description: err.message || 'An unknown error occurred.', variant: 'destructive' });
-      console.error(err);
-    } finally {
-      setGenerating(false);
-    }
+  const handleRetouchComplete = (newImageUrl: string) => {
+    fetchHistory(true);
   };
 
   if (loading || !userLoaded) {
@@ -688,8 +673,8 @@ export default function Dashboard() {
                                 </div>
                                 <div className="absolute inset-0 bg-black bg-opacity-60 flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg">
                                   <Button size="sm" onClick={() => handleDownload(image.url)}>Download</Button>
-                                  <Button size="sm" variant="secondary" onClick={() => { setEditingImage(image); setEditPrompt(image.prompt); }}>
-                                    Edit
+                                  <Button size="sm" variant="secondary" onClick={() => { setRetouchImageUrl(image.url); setShowMagicRetouch(true); }}>
+                                    Magic Retouch
                                   </Button>
                                 </div>
                               </div>
@@ -712,27 +697,13 @@ export default function Dashboard() {
           </TabsContent>
         </Tabs>
 
-        {editingImage && (
-          <AlertDialog open onOpenChange={() => setEditingImage(null)}>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Edit Image</AlertDialogTitle>
-                <AlertDialogDescription>
-                  <Image src={editingImage.thumbnailUrl || editingImage.url} alt="Editing image" width={500} height={500} className="rounded-lg my-4" />
-                  <textarea
-                    value={editPrompt}
-                    onChange={(e) => setEditPrompt(e.target.value)}
-                    className="w-full p-2 border rounded"
-                    rows={3}
-                  />
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction onClick={handleEdit}>Generate</AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
+        {showMagicRetouch && (
+          <MagicRetouchModal
+            isOpen={showMagicRetouch}
+            onClose={() => setShowMagicRetouch(false)}
+            imageUrl={retouchImageUrl}
+            onRetouchComplete={handleRetouchComplete}
+          />
         )}
       </main>
     </div>
