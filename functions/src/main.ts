@@ -161,7 +161,7 @@ export const generateProductPhotos = functions.runWith({ timeoutSeconds: 540, me
       const uploadPromises = generatedImages.map(async (imgBuffer: Buffer, index: number) => {
         const filename = `generated/${userId}/${timestamp}_${index}.png`;
         const file = bucket.file(filename);
-        await file.save(imgBuffer, { contentType: 'image/png', metadata: { metadata: { userId, generatedAt: new Date().toISOString(), prompt: prompts[index] } } });
+        await file.save(imgBuffer, { contentType: 'image/png', metadata: { metadata: { userId, generatedAt: new Date().toISOString(), prompt: prompts[index] } }, cacheControl: 'no-cache' });
         await file.makePublic();
         return { url: `https://storage.googleapis.com/${bucket.name}/${filename}`, prompt: prompts[index] };
       });
@@ -265,7 +265,7 @@ export const editProductPhoto = functions.runWith({ timeoutSeconds: 540, memory:
       const timestamp = Date.now();
       const filename = `generated/${userId}/${timestamp}_edited.png`;
       const file = bucket.file(filename);
-      await file.save(editedImage, { contentType: 'image/png', metadata: { metadata: { userId, generatedAt: new Date().toISOString(), prompt: prompt } } });
+      await file.save(editedImage, { contentType: 'image/png', metadata: { metadata: { userId, generatedAt: new Date().toISOString(), prompt: prompt } }, cacheControl: 'no-cache' });
       await file.makePublic();
       const uploadedImage = { url: `https://storage.googleapis.com/${bucket.name}/${filename}`, prompt: prompt };
 
@@ -441,7 +441,7 @@ export const magicRetouch = functions.runWith({ timeoutSeconds: 540, memory: '2G
       const timestamp = Date.now();
       const filename = `generated/${userId}/${timestamp}_retouched.png`;
       const file = bucket.file(filename);
-      await file.save(editedImage, { contentType: 'image/png' });
+      await file.save(editedImage, { contentType: 'image/png', cacheControl: 'no-cache' });
       await file.makePublic();
       const uploadedImage = { url: `https://storage.googleapis.com/${bucket.name}/${filename}` };
 
@@ -494,7 +494,7 @@ export const generateWithVirtualModel = functions.runWith({ timeoutSeconds: 540,
       const timestamp = Date.now();
       const filename = `generated/${userId}/${timestamp}_virtual_model.png`;
       const file = bucket.file(filename);
-      await file.save(finalImage, { contentType: 'image/png' });
+      await file.save(finalImage, { contentType: 'image/png', cacheControl: 'no-cache' });
       await file.makePublic();
       const uploadedImage = { url: `https://storage.googleapis.com/${bucket.name}/${filename}` };
 

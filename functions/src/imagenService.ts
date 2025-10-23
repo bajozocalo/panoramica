@@ -2,7 +2,107 @@ import { PredictionServiceClient } from '@google-cloud/aiplatform';
 import { helpers } from '@google-cloud/aiplatform';
 import * as functions from 'firebase-functions';
 
-// ... (generateImages, editImage, magicRetouch functions remain the same) ...
+export async function generateImages(
+  prompts: string[],
+  projectId: string,
+  location: string,
+  extractedProduct: Buffer,
+  logoPath?: string
+): Promise<Buffer[]> {
+  const clientOptions = {
+    apiEndpoint: `${location}-aiplatform.googleapis.com`,
+  };
+  const predictionServiceClient = new PredictionServiceClient(clientOptions);
+  const modelName = 'imagegeneration@006';
+  const endpoint = `projects/${projectId}/locations/${location}/publishers/google/models/${modelName}`;
+
+  const generationPromises = prompts.map(async (prompt) => {
+    const request = {
+      endpoint,
+      instances: [helpers.toValue({
+        prompt,
+        image: { bytesBase64Encoded: extractedProduct.toString('base64') }
+      })],
+      parameters: helpers.toValue({ sampleCount: 1 }),
+    };
+
+    const [response] = await predictionServiceClient.predict(request as any);
+    const predictions = response.predictions;
+    if (!predictions || predictions.length === 0) {
+      throw new Error('No predictions returned from Imagen');
+    }
+    const imageBase64 = (predictions[0] as any).structValue.fields.bytesBase64Encoded.stringValue;
+    return Buffer.from(imageBase64, 'base64');
+  });
+
+  return Promise.all(generationPromises);
+}
+
+export async function editImage(
+  prompt: string,
+  projectId: string,
+  location: string,
+  imageBuffer: Buffer
+): Promise<Buffer> {
+  const clientOptions = {
+    apiEndpoint: `${location}-aiplatform.googleapis.com`,
+  };
+  const predictionServiceClient = new PredictionServiceClient(clientOptions);
+  const modelName = 'imagegeneration@006';
+  const endpoint = `projects/${projectId}/locations/${location}/publishers/google/models/${modelName}`;
+
+  const request = {
+    endpoint,
+    instances: [helpers.toValue({
+      prompt,
+      image: { bytesBase64Encoded: imageBuffer.toString('base64') },
+      editMode: 'outpaint'
+    })],
+    parameters: helpers.toValue({ sampleCount: 1 }),
+  };
+
+  const [response] = await predictionServiceClient.predict(request as any);
+  const predictions = response.predictions;
+  if (!predictions || predictions.length === 0) {
+    throw new Error('No predictions returned from Imagen');
+  }
+  const imageBase64 = (predictions[0] as any).structValue.fields.bytesBase64Encoded.stringValue;
+  return Buffer.from(imageBase64, 'base64');
+}
+
+export async function magicRetouch(
+  prompt: string,
+  projectId: string,
+  location: string,
+  imageBuffer: Buffer,
+  maskBuffer: Buffer
+): Promise<Buffer> {
+  const clientOptions = {
+    apiEndpoint: `${location}-aiplatform.googleapis.com`,
+  };
+  const predictionServiceClient = new PredictionServiceClient(clientOptions);
+  const modelName = 'imagegeneration@006';
+  const endpoint = `projects/${projectId}/locations/${location}/publishers/google/models/${modelName}`;
+
+  const request = {
+    endpoint,
+    instances: [helpers.toValue({
+      prompt,
+      image: { bytesBase64Encoded: imageBuffer.toString('base64') },
+      mask: { image: { bytesBase64Encoded: maskBuffer.toString('base64') } },
+      editMode: 'inpaint-insert'
+    })],
+    parameters: helpers.toValue({ sampleCount: 1 }),
+  };
+
+  const [response] = await predictionServiceClient.predict(request as any);
+  const predictions = response.predictions;
+  if (!predictions || predictions.length === 0) {
+    throw new Error('No predictions returned from Imagen');
+  }
+  const imageBase64 = (predictions[0] as any).structValue.fields.bytesBase64Encoded.stringValue;
+  return Buffer.from(imageBase64, 'base64');
+}
 
 export async function generateWithVirtualModel(
   prompt: string,

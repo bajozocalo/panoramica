@@ -46,6 +46,19 @@ export function generateFallbackPrompts(
   return prompts;
 }
 
+export async function generatePrompts(
+  vertexAI: VertexAI,
+  productType: string,
+  scenes: string[],
+  variationsPerScene: number,
+  styles: string[],
+  moods: string[],
+  customPrompt?: string
+): Promise<string[]> {
+  // Use fallback prompts for now
+  return generateFallbackPrompts(productType, scenes, variationsPerScene, styles, moods, customPrompt);
+}
+
 export async function generateVirtualModelPrompt(
   vertexAI: VertexAI,
   modelDesc: { gender: string; ethnicity: string; },
