@@ -9,6 +9,21 @@ import { I18nProvider } from "@/components/ui/I18nProvider";
 
 // ... other imports
 
+const inter = Inter({ subsets: ["latin"], variable: '--font-inter' });
+const poppins = Poppins({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+  variable: '--font-poppins'
+});
+
+export const metadata: Metadata = {
+  title: {
+    template: '%s | Panoramica.digital',
+    default: 'Panoramica.digital | AI-Powered Product Photography',
+  },
+  description: 'Create stunning product photos with AI. Upload your product, choose a scene, and let our AI generate beautiful, high-quality images for your e-commerce store.',
+};
+
 export default function RootLayout({
   children,
 }: {
